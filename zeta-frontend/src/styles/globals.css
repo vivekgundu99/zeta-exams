@@ -12,7 +12,8 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply bg-gray-50 text-gray-900;
+  background-color: #f9fafb;
+  color: #111827;
 }
 
 /* Custom scrollbar */
@@ -22,129 +23,137 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background-color: #f3f4f6;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded-full;
+  background-color: #9ca3af;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500;
+  background-color: #6b7280;
 }
 
-/* Button hover effects */
-.btn-primary {
-  @apply bg-primary-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-primary-700 hover:shadow-lg active:scale-95;
+/* Custom component styles */
+@layer components {
+  /* Button styles */
+  .btn-primary {
+    @apply bg-primary-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-primary-700 hover:shadow-lg active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300 hover:shadow-md active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-red-600 hover:shadow-lg active:scale-95;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-xl shadow-sm p-6 transition-all duration-200;
+  }
+
+  .card.hover {
+    @apply hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .card-gradient {
+    @apply bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-xl shadow-sm p-6;
+  }
+
+  /* Input styles */
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .input-error {
+    @apply border-red-500 focus:ring-red-500;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .badge-primary {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  /* Question number styles */
+  .question-number {
+    @apply w-10 h-10 flex items-center justify-center rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200;
+  }
+
+  .question-unattempted {
+    @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
+  }
+
+  .question-attempted {
+    @apply bg-blue-500 text-white hover:bg-blue-600;
+  }
+
+  .question-answered {
+    @apply bg-green-500 text-white hover:bg-green-600;
+  }
+
+  .question-flagged {
+    @apply bg-orange-500 text-white hover:bg-orange-600;
+  }
+
+  .question-current {
+    @apply ring-2 ring-primary-500 ring-offset-2;
+  }
 }
 
-.btn-secondary {
-  @apply bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300 hover:shadow-md active:scale-95;
-}
+/* Utility styles */
+@layer utilities {
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
+  }
 
-.btn-danger {
-  @apply bg-danger-500 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 hover:bg-danger-600 hover:shadow-lg active:scale-95;
-}
+  .animate-slideUp {
+    animation: slideUp 0.3s ease-out;
+  }
 
-/* Card styles */
-.card {
-  @apply bg-white rounded-xl shadow-soft p-6 transition-all duration-200;
-}
+  .shadow-soft {
+    box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  }
 
-.card.hover {
-  @apply hover:shadow-lg;
-}
-
-.card-gradient {
-  @apply bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-xl shadow-soft p-6;
-}
-
-/* Input styles */
-.input-field {
-  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
-}
-
-.input-error {
-  @apply border-danger-500 focus:ring-danger-500;
-}
-
-/* Loading spinner - FIXED: Changed border-3 to border-2 */
-.spinner {
-  @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin;
-}
-
-/* Gradient text */
-.gradient-text {
-  @apply bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
-}
-
-/* Badge styles */
-.badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
-}
-
-.badge-success {
-  @apply bg-success-100 text-success-700;
-}
-
-.badge-warning {
-  @apply bg-warning-100 text-warning-700;
-}
-
-.badge-danger {
-  @apply bg-danger-100 text-danger-700;
-}
-
-.badge-primary {
-  @apply bg-primary-100 text-primary-700;
-}
-
-/* Animation utilities */
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.animate-slideUp {
-  animation: slideUp 0.3s ease-out;
-}
-
-/* Question display styles */
-.question-number {
-  @apply w-10 h-10 flex items-center justify-center rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200;
-}
-
-.question-unattempted {
-  @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
-}
-
-.question-attempted {
-  @apply bg-blue-500 text-white hover:bg-blue-600;
-}
-
-.question-answered {
-  @apply bg-green-500 text-white hover:bg-green-600;
-}
-
-.question-flagged {
-  @apply bg-orange-500 text-white hover:bg-orange-600;
-}
-
-.question-current {
-  @apply ring-2 ring-primary-500 ring-offset-2;
-}
-
-/* Toast notifications - override default styles */
-.toast-success {
-  @apply bg-success-500;
-}
-
-.toast-error {
-  @apply bg-danger-500;
+  .shadow-glow {
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
+  }
 }
 
 /* Math equation support */
 .math-equation {
-  @apply font-serif text-lg my-2;
+  font-family: serif;
+  font-size: 1.125rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Print styles */
@@ -157,11 +166,15 @@ body {
 /* Responsive utilities */
 @media (max-width: 640px) {
   .card {
-    @apply p-4;
+    padding: 1rem;
   }
   
   .btn-primary, .btn-secondary {
-    @apply text-sm px-4 py-2;
+    font-size: 0.875rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
   }
 }
 
