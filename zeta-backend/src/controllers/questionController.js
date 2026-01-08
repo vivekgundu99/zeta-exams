@@ -375,3 +375,33 @@ export const submitChapterTest = async (req, res) => {
     });
   }
 };
+// @desc    Get questions (generic endpoint)
+// @route   GET /api/questions
+// @access  Private
+export const getQuestions = async (req, res) => {
+  try {
+    const { examType, subject, chapter, topic, limit = 50 } = req.query;
+    
+    const query = { isActive: true };
+    if (examType) query.examType = examType;
+    if (subject) query.subject = subject;
+    if (chapter) query.chapter = chapter;
+    if (topic) query.topic = topic;
+
+    const questions = await Question.find(query)
+      .select('-solution -solutionImageUrl')
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      count: questions.length,
+      questions
+    });
+  } catch (error) {
+    console.error('Get questions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};

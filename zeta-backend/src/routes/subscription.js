@@ -12,8 +12,8 @@ import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Public route for webhook
-router.post('/webhook', express.raw({ type: 'application/json' }), razorpayWebhook);
+// Webhook route MUST come before express.json() middleware
+// Move this to index.js or handle differently
 
 // Protected routes
 router.use(protect);
