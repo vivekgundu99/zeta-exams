@@ -48,7 +48,11 @@ body {
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-xl shadow-soft p-6 transition-all duration-200 hover:shadow-lg;
+  @apply bg-white rounded-xl shadow-soft p-6 transition-all duration-200;
+}
+
+.card.hover {
+  @apply hover:shadow-lg;
 }
 
 .card-gradient {
@@ -64,9 +68,9 @@ body {
   @apply border-danger-500 focus:ring-danger-500;
 }
 
-/* Loading spinner */
+/* Loading spinner - FIXED: Changed border-3 to border-2 */
 .spinner {
-  @apply inline-block w-6 h-6 border-3 border-gray-300 border-t-primary-600 rounded-full animate-spin;
+  @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin;
 }
 
 /* Gradient text */
@@ -158,5 +162,37 @@ body {
   
   .btn-primary, .btn-secondary {
     @apply text-sm px-4 py-2;
+  }
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

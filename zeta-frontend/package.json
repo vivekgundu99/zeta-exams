@@ -1,7 +1,6 @@
 {
   "name": "zeta-frontend",
   "version": "1.0.0",
-  "description": "Zeta Exams Frontend Application",
   "type": "module",
   "scripts": {
     "dev": "vite",
