@@ -16,16 +16,22 @@ const connectDB = async () => {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // Increased from 5000
       socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: 'majority'
     };
 
+    console.log('🔄 Connecting to MongoDB...');
+    
     cached.promise = mongoose.connect(process.env.MONGODB_URI, opts)
       .then((mongoose) => {
-        console.log('✅ MongoDB Connected');
+        console.log('✅ MongoDB Connected Successfully');
+        console.log('📊 Database:', mongoose.connection.name);
         return mongoose;
       })
       .catch((error) => {
+        cached.promise = null; // Reset on error
         console.error('❌ MongoDB connection failed:', error.message);
         throw error;
       });

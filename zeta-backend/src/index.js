@@ -36,15 +36,15 @@ app.use(cors({
 }));
 app.use(compression());
 
+// Now apply JSON parsing for other routes
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Webhook route BEFORE express.json() to get raw body
 app.post('/api/subscription/webhook', 
   express.raw({ type: 'application/json' }), 
   razorpayWebhook
 );
-
-// Now apply JSON parsing for other routes
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -80,6 +80,18 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// Middleware to log all requests (helps debug)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// Mount routes with explicit path handling for Vercel
+app.use('/api/auth', (req, res, next) => {
+  console.log('Auth route hit:', req.path);
+  next();
+}, authRoutes);
 
 // API Routes
 app.use('/api/auth', authRoutes);

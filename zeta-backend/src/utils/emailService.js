@@ -83,7 +83,7 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
     }
     
     const { data, error } = await resend.emails.send({
-      from: 'Zeta Exams <noreply@zetaexams.com>',
+      from: 'onboarding@resend.dev',
       to: [email],
       subject: subject,
       html: html
