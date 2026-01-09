@@ -5,6 +5,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Send OTP email
 export const sendOTPEmail = async (email, otp, type = 'registration') => {
   try {
+    console.log('Attempting to send email to:', email);
+    console.log('Email type:', type);
+    console.log('Resend API Key exists:', !!process.env.RESEND_API_KEY);
+    
     let subject, html;
     
     if (type === 'registration') {
@@ -82,16 +86,27 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
       `;
     }
     
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not configured');
+      console.log('OTP for testing:', otp);
+      // In development, just return success and log the OTP
+      if (process.env.NODE_ENV === 'development') {
+        return true;
+      }
+      throw new Error('Email service not configured');
+    }
+    
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'Zeta Exams <onboarding@resend.dev>',
       to: [email],
       subject: subject,
       html: html
     });
 
     if (error) {
-      console.error('Email sending error:', error);
-      throw new Error('Failed to send email');
+      console.error('Resend email error:', error);
+      throw new Error('Failed to send email: ' + error.message);
     }
 
     console.log('Email sent successfully:', data);
@@ -99,6 +114,18 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
 
   } catch (error) {
     console.error('Email service error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // In development, don't fail the request
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Email not sent, but continuing...');
+      console.log('OTP for manual testing:', otp);
+      return true;
+    }
+    
     throw new Error('Failed to send email');
   }
 };
@@ -106,6 +133,11 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
 // Send subscription confirmation email
 export const sendSubscriptionEmail = async (email, subscriptionType, endDate) => {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.log('RESEND_API_KEY not configured, skipping subscription email');
+      return true;
+    }
+    
     const subject = '🎉 Subscription Activated - Zeta Exams';
     const html = `
       <!DOCTYPE html>
@@ -145,7 +177,7 @@ export const sendSubscriptionEmail = async (email, subscriptionType, endDate) =>
     `;
     
     await resend.emails.send({
-      from: 'Zeta Exams <noreply@zetaexams.com>',
+      from: 'Zeta Exams <onboarding@resend.dev>',
       to: [email],
       subject: subject,
       html: html

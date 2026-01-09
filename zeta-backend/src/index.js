@@ -33,21 +33,21 @@ app.use(cors({
 }));
 app.use(compression());
 
-// Now apply JSON parsing for other routes
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
 // Webhook route BEFORE express.json() to get raw body
 app.post('/api/subscription/webhook', 
   express.raw({ type: 'application/json' }), 
   razorpayWebhook
 );
 
+// Now apply JSON parsing for other routes
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Root route - ADD THIS
+// Root route
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -67,31 +67,29 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check
-app.get('/api/health', async (req, res) => {  // ADD 'async' here
-  await connectDB();
-  res.json({ 
-    success: true,
-    status: 'OK', 
-    message: 'Zeta Exams API is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+// Health check - make it async and connect to DB
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    res.json({ 
+      success: true,
+      status: 'OK', 
+      message: 'Zeta Exams API is running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: 'connected'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      status: 'ERROR',
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
 });
 
-// Middleware to log all requests (helps debug)
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-// Mount routes with explicit path handling for Vercel
-app.use('/api/auth', (req, res, next) => {
-  console.log('Auth route hit:', req.path);
-  next();
-}, authRoutes);
-
-// API Routes
+// API Routes - Mount them correctly
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -131,17 +129,23 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server (only if not in Vercel serverless environment)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Zeta Backend running on port ${PORT}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV}`);
-  });
+// Export for Vercel - CORRECTED
+export default async function handler(req, res) {
+  // Connect to database first
+  await connectDB();
+  // Then handle the request
+  return app(req, res);
 }
 
-// Export for Vercel
-// NEW
-export default async function handler(req, res) {
-  await connectDB();
-  return app(req, res);
+// Start server (only if not in Vercel serverless environment)
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Zeta Backend running on port ${PORT}`);
+      console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+    });
+  }).catch(error => {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
+  });
 }

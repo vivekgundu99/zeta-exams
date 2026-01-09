@@ -2,9 +2,11 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+console.log('API URL:', API_URL); // Debug log
+
 // Create axios instance
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL, // Remove '/api' from here since routes already have it
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,6 +16,7 @@ const api = axios.create({
 // Request interceptor - Add auth token
 api.interceptors.request.use(
   (config) => {
+    console.log('API Request:', config.method.toUpperCase(), config.url); // Debug log
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -27,8 +30,13 @@ api.interceptors.request.use(
 
 // Response interceptor - Handle errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    console.log('API Response:', response.config.url, response.status); // Debug log
+    return response.data;
+  },
   (error) => {
+    console.error('API Error:', error.response || error.message); // Debug log
+    
     if (error.response) {
       // Server responded with error
       const message = error.response.data?.message || 'Something went wrong';
@@ -63,110 +71,110 @@ const getDeviceId = () => {
 
 // Auth APIs
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  verifyOTP: (data) => api.post('/auth/verify-otp', data),
-  login: (data) => api.post('/auth/login', { ...data, deviceId: getDeviceId() }),
-  logout: () => api.post('/auth/logout'),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword: (data) => api.post('/auth/reset-password', data),
+  register: (data) => api.post('/api/auth/register', data),
+  verifyOTP: (data) => api.post('/api/auth/verify-otp', data),
+  login: (data) => api.post('/api/auth/login', { ...data, deviceId: getDeviceId() }),
+  logout: () => api.post('/api/auth/logout'),
+  forgotPassword: (email) => api.post('/api/auth/forgot-password', { email }),
+  resetPassword: (data) => api.post('/api/auth/reset-password', data),
 };
 
 // User APIs
 export const userAPI = {
-  getProfile: () => api.get('/user/profile'),
-  updateDetails: (data) => api.put('/user/details', data),
-  selectExam: (examType) => api.post('/user/select-exam', { examType }),
-  updatePassword: (data) => api.put('/user/password', data),
-  getStats: () => api.get('/user/stats'),
-  getSubscriptionInfo: () => api.get('/user/subscription-info'),
-  updateExamType: (examType) => api.put('/user/exam-type', { examType }),
+  getProfile: () => api.get('/api/user/profile'),
+  updateDetails: (data) => api.put('/api/user/details', data),
+  selectExam: (examType) => api.post('/api/user/select-exam', { examType }),
+  updatePassword: (data) => api.put('/api/user/password', data),
+  getStats: () => api.get('/api/user/stats'),
+  getSubscriptionInfo: () => api.get('/api/user/subscription-info'),
+  updateExamType: (examType) => api.put('/api/user/exam-type', { examType }),
 };
 
 // Question APIs
 export const questionAPI = {
-  getSubjects: (examType) => api.get(`/questions/subjects/${examType}`),
-  getChapters: (examType, subject) => api.get(`/questions/chapters/${examType}/${subject}`),
-  getTopics: (examType, subject, chapter) => api.get(`/questions/topics/${examType}/${subject}/${chapter}`),
-  getQuestions: (examType, subject, chapter, topic) => api.get(`/questions/topic/${examType}/${subject}/${chapter}/${topic}`),
-  submitAnswer: (data) => api.post('/questions/submit-answer', data),
-  generateChapterTest: (data) => api.post('/questions/chapter-test/generate', data),
-  submitChapterTest: (data) => api.post('/questions/chapter-test/submit', data),
+  getSubjects: (examType) => api.get(`/api/questions/subjects/${examType}`),
+  getChapters: (examType, subject) => api.get(`/api/questions/chapters/${examType}/${subject}`),
+  getTopics: (examType, subject, chapter) => api.get(`/api/questions/topics/${examType}/${subject}/${chapter}`),
+  getQuestions: (examType, subject, chapter, topic) => api.get(`/api/questions/topic/${examType}/${subject}/${chapter}/${topic}`),
+  submitAnswer: (data) => api.post('/api/questions/submit-answer', data),
+  generateChapterTest: (data) => api.post('/api/questions/chapter-test/generate', data),
+  submitChapterTest: (data) => api.post('/api/questions/chapter-test/submit', data),
 };
 
 // Mock Test APIs
 export const mockTestAPI = {
-  getAllTests: (examType) => api.get(`/mock-tests/all/${examType}`),
-  getTestById: (testId) => api.get(`/mock-tests/${testId}`),
-  startTest: (testId) => api.post(`/mock-tests/${testId}/start`),
-  submitTest: (testId, data) => api.post(`/mock-tests/${testId}/submit`, data),
-  getResult: (testId, attemptId) => api.get(`/mock-tests/${testId}/result/${attemptId}`),
-  getAttempts: (testId) => api.get(`/mock-tests/${testId}/attempts`),
-  getOngoingTest: () => api.get('/mock-tests/ongoing'),
+  getAllTests: (examType) => api.get(`/api/mock-tests/all/${examType}`),
+  getTestById: (testId) => api.get(`/api/mock-tests/${testId}`),
+  startTest: (testId) => api.post(`/api/mock-tests/${testId}/start`),
+  submitTest: (testId, data) => api.post(`/api/mock-tests/${testId}/submit`, data),
+  getResult: (testId, attemptId) => api.get(`/api/mock-tests/${testId}/result/${attemptId}`),
+  getAttempts: (testId) => api.get(`/api/mock-tests/${testId}/attempts`),
+  getOngoingTest: () => api.get('/api/mock-tests/ongoing'),
 };
 
 // Subscription APIs
 export const subscriptionAPI = {
-  getPlans: () => api.get('/subscription/plans'),
-  createOrder: (data) => api.post('/subscription/create-order', data),
-  verifyPayment: (data) => api.post('/subscription/verify-payment', data),
-  validateGiftCode: (code) => api.post('/subscription/validate-giftcode', { code }),
-  applyGiftCode: (code) => api.post('/subscription/apply-giftcode', { code }),
+  getPlans: () => api.get('/api/subscription/plans'),
+  createOrder: (data) => api.post('/api/subscription/create-order', data),
+  verifyPayment: (data) => api.post('/api/subscription/verify-payment', data),
+  validateGiftCode: (code) => api.post('/api/subscription/validate-giftcode', { code }),
+  applyGiftCode: (code) => api.post('/api/subscription/apply-giftcode', { code }),
 };
 
 // Analytics APIs
 export const analyticsAPI = {
-  getOverview: () => api.get('/analytics/overview'),
-  getSubjectWise: (examType) => api.get(`/analytics/subject-wise/${examType}`),
-  getChapterWise: (examType, subject) => api.get(`/analytics/chapter-wise/${examType}/${subject}`),
-  getTestHistory: (params) => api.get('/analytics/test-history', { params }),
-  getPerformanceTrend: (params) => api.get('/analytics/performance-trend', { params }),
-  getStrengthWeakness: () => api.get('/analytics/strength-weakness'),
-  getAccuracyReport: () => api.get('/analytics/accuracy-report'),
-  getTimeAnalysis: () => api.get('/analytics/time-analysis'),
+  getOverview: () => api.get('/api/analytics/overview'),
+  getSubjectWise: (examType) => api.get(`/api/analytics/subject-wise/${examType}`),
+  getChapterWise: (examType, subject) => api.get(`/api/analytics/chapter-wise/${examType}/${subject}`),
+  getTestHistory: (params) => api.get('/api/analytics/test-history', { params }),
+  getPerformanceTrend: (params) => api.get('/api/analytics/performance-trend', { params }),
+  getStrengthWeakness: () => api.get('/api/analytics/strength-weakness'),
+  getAccuracyReport: () => api.get('/api/analytics/accuracy-report'),
+  getTimeAnalysis: () => api.get('/api/analytics/time-analysis'),
 };
 
 // Admin APIs
 export const adminAPI = {
   // Questions
-  bulkUploadQuestions: (formData) => api.post('/admin/questions/bulk-upload', formData, {
+  bulkUploadQuestions: (formData) => api.post('/api/admin/questions/bulk-upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  addQuestion: (data) => api.post('/admin/questions/add', data),
-  updateQuestion: (questionId, data) => api.put(`/admin/questions/${questionId}`, data),
-  deleteQuestion: (questionId) => api.delete(`/admin/questions/${questionId}`),
-  searchQuestion: (params) => api.get('/admin/questions/search', { params }),
+  addQuestion: (data) => api.post('/api/admin/questions/add', data),
+  updateQuestion: (questionId, data) => api.put(`/api/admin/questions/${questionId}`, data),
+  deleteQuestion: (questionId) => api.delete(`/api/admin/questions/${questionId}`),
+  searchQuestion: (params) => api.get('/api/admin/questions/search', { params }),
   
   // Formulas
-  addFormula: (data) => api.post('/admin/formulas/add', data),
-  updateFormula: (formulaId, data) => api.put(`/admin/formulas/${formulaId}`, data),
-  deleteFormula: (formulaId) => api.delete(`/admin/formulas/${formulaId}`),
-  getAllFormulas: (examType) => api.get(`/admin/formulas/${examType}`),
+  addFormula: (data) => api.post('/api/admin/formulas/add', data),
+  updateFormula: (formulaId, data) => api.put(`/api/admin/formulas/${formulaId}`, data),
+  deleteFormula: (formulaId) => api.delete(`/api/admin/formulas/${formulaId}`),
+  getAllFormulas: (examType) => api.get(`/api/admin/formulas/${examType}`),
   
   // Mock Tests
-  createMockTest: (data) => api.post('/admin/mock-tests/create', data),
-  updateMockTest: (testId, data) => api.put(`/admin/mock-tests/${testId}`, data),
-  deleteMockTest: (testId) => api.delete(`/admin/mock-tests/${testId}`),
+  createMockTest: (data) => api.post('/api/admin/mock-tests/create', data),
+  updateMockTest: (testId, data) => api.put(`/api/admin/mock-tests/${testId}`, data),
+  deleteMockTest: (testId) => api.delete(`/api/admin/mock-tests/${testId}`),
   
   // Users
-  getAllUsers: (params) => api.get('/admin/users', { params }),
-  getUserDetails: (userId) => api.get(`/admin/users/${userId}`),
-  updateUserSubscription: (userId, data) => api.put(`/admin/users/${userId}/subscription`, data),
-  deactivateUser: (userId) => api.put(`/admin/users/${userId}/deactivate`),
+  getAllUsers: (params) => api.get('/api/admin/users', { params }),
+  getUserDetails: (userId) => api.get(`/api/admin/users/${userId}`),
+  updateUserSubscription: (userId, data) => api.put(`/api/admin/users/${userId}/subscription`, data),
+  deactivateUser: (userId) => api.put(`/api/admin/users/${userId}/deactivate`),
   
   // Gift Codes
-  generateGiftCodes: (data) => api.post('/admin/giftcodes/generate', data),
-  getAllGiftCodes: (params) => api.get('/admin/giftcodes', { params }),
-  deleteGiftCode: (codeId) => api.delete(`/admin/giftcodes/${codeId}`),
+  generateGiftCodes: (data) => api.post('/api/admin/giftcodes/generate', data),
+  getAllGiftCodes: (params) => api.get('/api/admin/giftcodes', { params }),
+  deleteGiftCode: (codeId) => api.delete(`/api/admin/giftcodes/${codeId}`),
   
   // Stats
-  getAdminStats: () => api.get('/admin/stats'),
+  getAdminStats: () => api.get('/api/admin/stats'),
 };
 
 // Formula APIs (public)
 export const formulaAPI = {
   getFormulas: (examType, subject, chapter) => {
     // This would be implemented based on your backend route
-    return api.get(`/formulas/${examType}/${subject}/${chapter}`);
+    return api.get(`/api/formulas/${examType}/${subject}/${chapter}`);
   }
 };
 

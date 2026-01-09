@@ -17,7 +17,10 @@ const generateToken = (userId) => {
 // @access  Public
 export const register = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    console.log('Register endpoint hit');
+    console.log('Request body:', req.body);
+    
+    await connectDB();
     const { email, phoneNo, password, confirmPassword } = req.body;
 
     // Validation
@@ -42,6 +45,8 @@ export const register = async (req, res) => {
       });
     }
 
+    console.log('Checking existing user...');
+    
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { phoneNo: encryptPhone(phoneNo) }]
@@ -54,9 +59,15 @@ export const register = async (req, res) => {
       });
     }
 
+    console.log('Generating OTP...');
+    
     // Generate and send OTP
     const otp = generateOTP();
+    
+    console.log('Storing OTP...');
     await storeOTP(email, otp);
+    
+    console.log('Sending OTP email...');
     await sendOTPEmail(email, otp, 'registration');
 
     // Store user data temporarily (in production, use Redis or similar)
@@ -67,6 +78,8 @@ export const register = async (req, res) => {
       { expiresIn: '10m' }
     );
 
+    console.log('Registration successful, OTP sent');
+
     res.status(200).json({
       success: true,
       message: 'OTP sent to your email',
@@ -75,11 +88,11 @@ export const register = async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
-    console.error('Error details:', error.stack); // Add this line
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Server error during registration',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined // Add this line
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };
@@ -89,7 +102,8 @@ export const register = async (req, res) => {
 // @access  Public
 export const verifyOTPAndRegister = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    console.log('Verify OTP endpoint hit');
+    await connectDB();
     const { tempToken, otp } = req.body;
 
     if (!tempToken || !otp) {
@@ -149,7 +163,8 @@ export const verifyOTPAndRegister = async (req, res) => {
 // @access  Public
 export const login = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    console.log('Login endpoint hit');
+    await connectDB();
     const { email, phoneNo, password, deviceId, isAdmin } = req.body;
 
     // Validation
@@ -278,7 +293,7 @@ export const login = async (req, res) => {
 // @access  Private
 export const logout = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    await connectDB();
     const user = await User.findById(req.user.id);
     
     if (user) {
@@ -306,7 +321,7 @@ export const logout = async (req, res) => {
 // @access  Public
 export const forgotPassword = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    await connectDB();
     const { email } = req.body;
 
     if (!email) {
@@ -348,7 +363,7 @@ export const forgotPassword = async (req, res) => {
 // @access  Public
 export const resetPassword = async (req, res) => {
   try {
-    await connectDB(); // ADD THIS as first line
+    await connectDB();
     const { email, otp, newPassword, confirmPassword } = req.body;
 
     if (!email || !otp || !newPassword || !confirmPassword) {
