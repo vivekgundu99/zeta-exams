@@ -1,9 +1,11 @@
+import connectDB from '../config/database.js'; // ADD THIS
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
+    await connectDB(); // ADD THIS LINE
     let token;
 
     // Check for token in headers

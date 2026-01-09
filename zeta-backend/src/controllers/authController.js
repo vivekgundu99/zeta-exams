@@ -1,3 +1,4 @@
+import connectDB from '../config/database.js';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP, verifyOTP, storeOTP } from '../utils/otpGenerator.js';
@@ -16,6 +17,7 @@ const generateToken = (userId) => {
 // @access  Public
 export const register = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const { email, phoneNo, password, confirmPassword } = req.body;
 
     // Validation
@@ -87,6 +89,7 @@ export const register = async (req, res) => {
 // @access  Public
 export const verifyOTPAndRegister = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const { tempToken, otp } = req.body;
 
     if (!tempToken || !otp) {
@@ -146,6 +149,7 @@ export const verifyOTPAndRegister = async (req, res) => {
 // @access  Public
 export const login = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const { email, phoneNo, password, deviceId, isAdmin } = req.body;
 
     // Validation
@@ -274,6 +278,7 @@ export const login = async (req, res) => {
 // @access  Private
 export const logout = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const user = await User.findById(req.user.id);
     
     if (user) {
@@ -301,6 +306,7 @@ export const logout = async (req, res) => {
 // @access  Public
 export const forgotPassword = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const { email } = req.body;
 
     if (!email) {
@@ -342,6 +348,7 @@ export const forgotPassword = async (req, res) => {
 // @access  Public
 export const resetPassword = async (req, res) => {
   try {
+    await connectDB(); // ADD THIS as first line
     const { email, otp, newPassword, confirmPassword } = req.body;
 
     if (!email || !otp || !newPassword || !confirmPassword) {

@@ -23,9 +23,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
-
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -71,7 +68,8 @@ app.get('/', (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {  // ADD 'async' here
+  await connectDB();
   res.json({ 
     success: true,
     status: 'OK', 
@@ -142,4 +140,8 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 
 // Export for Vercel
-export default app;
+// NEW
+export default async function handler(req, res) {
+  await connectDB();
+  return app(req, res);
+}
