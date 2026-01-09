@@ -1,4 +1,3 @@
-import TestAPIPage from './pages/TestAPIPage';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
@@ -44,7 +43,6 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/test-api" element={<TestAPIPage />} />
 
             {/* Protected Routes */}
             <Route
