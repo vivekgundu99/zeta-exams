@@ -4,10 +4,19 @@ import User from '../models/User.js';
 import GiftCode from '../models/GiftCode.js';
 import { sendSubscriptionEmail } from '../utils/emailService.js';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Lazy initialization - only create instance when needed
+let razorpayInstance = null;
+
+const getRazorpayInstance = () => {
+  if (!razorpayInstance && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+    console.log('✅ Razorpay initialized');
+  }
+  return razorpayInstance;
+};
 
 // Subscription plans pricing
 const SUBSCRIPTION_PLANS = {
@@ -59,6 +68,15 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Invalid subscription plan'
+      });
+    }
+
+    // Check if Razorpay is configured
+    const razorpay = getRazorpayInstance();
+    if (!razorpay) {
+      return res.status(503).json({
+        success: false,
+        message: 'Payment service is not configured. Please contact support.'
       });
     }
 
@@ -116,6 +134,14 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
+    // Check if Razorpay is configured
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(503).json({
+        success: false,
+        message: 'Payment verification service is not configured'
+      });
+    }
+
     // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
@@ -127,6 +153,14 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Payment verification failed'
+      });
+    }
+
+    const razorpay = getRazorpayInstance();
+    if (!razorpay) {
+      return res.status(503).json({
+        success: false,
+        message: 'Payment service is not configured'
       });
     }
 
@@ -180,6 +214,11 @@ export const razorpayWebhook = async (req, res) => {
   try {
     const signature = req.headers['x-razorpay-signature'];
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.warn('⚠️ RAZORPAY_WEBHOOK_SECRET not configured');
+      return res.json({ success: true, received: true });
+    }
 
     // Verify webhook signature
     const expectedSignature = crypto

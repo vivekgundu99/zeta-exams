@@ -1,12 +1,14 @@
 import axios from 'axios';
 
+// IMPORTANT: Remove '/api' from VITE_API_URL in .env
+// It should be: VITE_API_URL=https://zeta-exams-backend.vercel.app
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 console.log('API URL:', API_URL); // Debug log
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_URL, // Remove '/api' from here since routes already have it
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -16,7 +18,7 @@ const api = axios.create({
 // Request interceptor - Add auth token
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method.toUpperCase(), config.url); // Debug log
+    console.log('API Request:', config.method.toUpperCase(), config.baseURL + config.url); // Debug log
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -173,7 +175,6 @@ export const adminAPI = {
 // Formula APIs (public)
 export const formulaAPI = {
   getFormulas: (examType, subject, chapter) => {
-    // This would be implemented based on your backend route
     return api.get(`/api/formulas/${examType}/${subject}/${chapter}`);
   }
 };

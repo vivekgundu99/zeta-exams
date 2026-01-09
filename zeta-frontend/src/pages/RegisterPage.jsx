@@ -68,16 +68,26 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
+      console.log('Sending registration data:', {
+        email: formData.email,
+        phoneNo: formData.phoneNo,
+        password: '***' // Don't log password
+      });
+
       const result = await register(formData);
+
+      console.log('Registration result:', result);
 
       if (result.success) {
         setTempToken(result.tempToken);
         setShowOTPModal(true);
         toast.success('OTP sent to your email!');
       } else {
+        console.error('Registration failed:', result);
         toast.error(result.message || 'Registration failed');
       }
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(error.message || 'Registration failed');
     } finally {
       setLoading(false);

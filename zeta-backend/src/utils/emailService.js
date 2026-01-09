@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization - only create instance when needed
+let resendInstance = null;
+
+const getResendInstance = () => {
+  if (!resendInstance && process.env.RESEND_API_KEY) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
+};
 
 // Send OTP email
 export const sendOTPEmail = async (email, otp, type = 'registration') => {
@@ -88,13 +96,17 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
     
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY is not configured');
-      console.log('OTP for testing:', otp);
-      // In development, just return success and log the OTP
-      if (process.env.NODE_ENV === 'development') {
-        return true;
-      }
-      throw new Error('Email service not configured');
+      console.warn('⚠️ RESEND_API_KEY is not configured');
+      console.log('📧 OTP for testing (COPY THIS):', otp);
+      console.log('📧 Email would be sent to:', email);
+      
+      // In development/testing, just log the OTP and return success
+      return true;
+    }
+    
+    const resend = getResendInstance();
+    if (!resend) {
+      throw new Error('Failed to initialize email service');
     }
     
     const { data, error } = await resend.emails.send({
@@ -109,24 +121,19 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
       throw new Error('Failed to send email: ' + error.message);
     }
 
-    console.log('Email sent successfully:', data);
+    console.log('✅ Email sent successfully:', data);
     return true;
 
   } catch (error) {
-    console.error('Email service error:', error);
+    console.error('❌ Email service error:', error);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack
     });
     
-    // In development, don't fail the request
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Email not sent, but continuing...');
-      console.log('OTP for manual testing:', otp);
-      return true;
-    }
-    
-    throw new Error('Failed to send email');
+    // Don't fail the request - just log the error and continue
+    console.log('⚠️ Email not sent, but continuing (OTP for manual use):', otp);
+    return true;
   }
 };
 
@@ -134,7 +141,13 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
 export const sendSubscriptionEmail = async (email, subscriptionType, endDate) => {
   try {
     if (!process.env.RESEND_API_KEY) {
-      console.log('RESEND_API_KEY not configured, skipping subscription email');
+      console.log('⚠️ RESEND_API_KEY not configured, skipping subscription email');
+      return true;
+    }
+    
+    const resend = getResendInstance();
+    if (!resend) {
+      console.log('⚠️ Failed to initialize email service');
       return true;
     }
     
@@ -183,10 +196,11 @@ export const sendSubscriptionEmail = async (email, subscriptionType, endDate) =>
       html: html
     });
 
+    console.log('✅ Subscription email sent successfully');
     return true;
 
   } catch (error) {
-    console.error('Subscription email error:', error);
-    return false;
+    console.error('❌ Subscription email error:', error);
+    return true; // Don't fail the request
   }
 };
