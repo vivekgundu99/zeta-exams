@@ -176,48 +176,52 @@ export const login = async (req, res) => {
     }
 
     // Admin login check
-    if (isAdmin) {
-      if (email !== process.env.ADMIN_EMAIL) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid admin credentials'
-        });
-      }
+if (isAdmin) {
+  if (email !== process.env.ADMIN_EMAIL) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid admin credentials'
+    });
+  }
 
-      // In production, verify against hashed password
-      if (password !== 'Zeta@123') {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid admin credentials'
-        });
-      }
-
-      // Find or create admin user
-      let adminUser = await User.findOne({ email: process.env.ADMIN_EMAIL });
-      if (!adminUser) {
-        adminUser = await User.create({
-          email: process.env.ADMIN_EMAIL,
-          phoneNo: '0000000000',
-          password: 'Zeta@123',
-          isAdmin: true,
-          userDetailsCompleted: true
-        });
-      }
-
-      const token = generateToken(adminUser._id);
-
-      return res.json({
-        success: true,
-        message: 'Admin login successful',
-        token,
-        isAdmin: true,
-        user: {
-          id: adminUser._id,
-          email: adminUser.email,
-          isAdmin: true
-        }
+  // Find admin user
+  let adminUser = await User.findOne({ email: process.env.ADMIN_EMAIL });
+  
+  if (!adminUser) {
+    // Create admin user on first login
+    adminUser = await User.create({
+      email: process.env.ADMIN_EMAIL,
+      phoneNo: encryptPhone('9999999999'), // Use encryption
+      password: password, // Will be hashed by pre-save hook
+      isAdmin: true,
+      userDetailsCompleted: true,
+      examType: 'JEE'
+    });
+  } else {
+    // Verify password for existing admin
+    const isMatch = await adminUser.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid admin credentials'
       });
     }
+  }
+
+  const token = generateToken(adminUser._id);
+
+  return res.json({
+    success: true,
+    message: 'Admin login successful',
+    token,
+    user: {
+      id: adminUser._id,
+      email: adminUser.email,
+      isAdmin: true,
+      userDetailsCompleted: true
+    }
+  });
+}
 
     // Regular user login
     const query = email ? { email } : { phoneNo: encryptPhone(phoneNo) };

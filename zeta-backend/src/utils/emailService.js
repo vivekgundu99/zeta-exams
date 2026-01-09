@@ -98,8 +98,8 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
     // For testing: Use onboarding@resend.dev
     // For production: Use your verified domain (e.g., noreply@yourdomain.com)
     const { data, error } = await resendInstance.emails.send({
-      from: 'Zeta Exams ', // Change this in production
-      to: [email],
+      from: 'onboarding@resend.dev', // For testing, or use your verified domain
+      to: email, // Remove array brackets
       subject: subject,
       html: html
     });

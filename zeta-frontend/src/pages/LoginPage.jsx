@@ -48,8 +48,11 @@ const LoginPage = () => {
       const result = await login(credentials);
 
       if (result.success) {
+        console.log('Login successful, user:', result.user); // Debug log
+        
         if (result.user.isAdmin) {
-          navigate('/admin');
+          console.log('Redirecting to admin dashboard');
+          navigate('/admin', { replace: true });
         } else if (!result.user.userDetailsCompleted) {
           navigate('/user-details');
         } else if (!result.user.examType) {

@@ -76,6 +76,12 @@ const SubscriptionPage = () => {
   }, [user]);
 
   const handlePayment = async (planType, pricingOption) => {
+    // Add this check at the start
+    if (!window.Razorpay) {
+      toast.error('Payment service is loading. Please wait...');
+      setTimeout(() => window.location.reload(), 1000);
+      return;
+    }
     setLoading(true);
 
     try {

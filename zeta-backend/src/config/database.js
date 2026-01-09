@@ -19,7 +19,8 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000, // Increased from 5000
       socketTimeoutMS: 45000,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      family: 4 // Add this to force IPv4
     };
 
     console.log('🔄 Connecting to MongoDB...');
