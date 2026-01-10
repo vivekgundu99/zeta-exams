@@ -13,6 +13,12 @@ export const bulkUploadQuestions = async (req, res) => {
   try {
     const { csvText, examType } = req.body;
 
+    console.log('Bulk upload request:', { 
+      hasCsvText: !!csvText, 
+      csvTextLength: csvText?.length,
+      examType 
+    });
+
     if (!csvText || !csvText.trim()) {
       return res.status(400).json({
         success: false,
@@ -23,17 +29,19 @@ export const bulkUploadQuestions = async (req, res) => {
     if (!examType || !['JEE', 'NEET'].includes(examType)) {
       return res.status(400).json({
         success: false,
-        message: 'Valid exam type is required'
+        message: 'Valid exam type is required (JEE or NEET)'
       });
     }
 
     // Parse CSV text
     const questions = await parseCSVText(csvText);
 
+    console.log('Parsed questions:', questions.length);
+
     if (!questions || questions.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No valid questions found in CSV text'
+        message: 'No valid questions found in CSV text. Please check the format.'
       });
     }
 
@@ -47,11 +55,29 @@ export const bulkUploadQuestions = async (req, res) => {
       try {
         const q = questions[i];
 
+        console.log(`Processing question ${i + 1}:`, {
+          type: q.type,
+          subject: q.subject,
+          chapter: q.chapter,
+          topic: q.topic
+        });
+
         // Validate required fields
         if (!q.type || !q.subject || !q.chapter || !q.topic || !q.question || !q.answer) {
           results.errors.push({
             row: i + 1,
-            error: 'Missing required fields'
+            error: 'Missing required fields',
+            question: q.question?.substring(0, 50)
+          });
+          continue;
+        }
+
+        // Validate question type
+        if (!['S', 'N'].includes(q.type)) {
+          results.errors.push({
+            row: i + 1,
+            error: `Invalid question type: ${q.type}. Must be S or N`,
+            question: q.question?.substring(0, 50)
           });
           continue;
         }
@@ -90,8 +116,7 @@ export const bulkUploadQuestions = async (req, res) => {
             subject: q.subject,
             chapter: q.chapter
           });
-          const nextCode = String.fromCharCode(65 + topicsInChapter.length);
-          topicCode = nextCode;
+          topicCode = String.fromCharCode(65 + topicsInChapter.length);
         }
 
         // Generate question ID and serial number
@@ -118,6 +143,16 @@ export const bulkUploadQuestions = async (req, res) => {
 
         // Add options for MCQ type
         if (q.type === 'S') {
+          // Validate that options exist
+          if (!q.optionA || !q.optionB || !q.optionC || !q.optionD) {
+            results.errors.push({
+              row: i + 1,
+              error: 'MCQ question must have all 4 options (A, B, C, D)',
+              question: q.question?.substring(0, 50)
+            });
+            continue;
+          }
+
           questionData.options = {
             A: {
               text: q.optionA || '',
@@ -136,31 +171,47 @@ export const bulkUploadQuestions = async (req, res) => {
               imageUrl: q.optionDImageUrl || null
             }
           };
+
+          // Validate answer is A, B, C, or D
+          if (!['A', 'B', 'C', 'D'].includes(q.answer.toUpperCase())) {
+            results.errors.push({
+              row: i + 1,
+              error: 'MCQ answer must be A, B, C, or D',
+              question: q.question?.substring(0, 50)
+            });
+            continue;
+          }
         }
 
         // Create question
-        await Question.create(questionData);
+        const savedQuestion = await Question.create(questionData);
 
         results.success.push({
           row: i + 1,
-          questionId,
-          serialNumber
+          questionId: savedQuestion.questionId,
+          serialNumber: savedQuestion.serialNumber
         });
 
+        console.log(`✅ Question ${i + 1} saved:`, savedQuestion.questionId);
+
       } catch (error) {
+        console.error(`Error processing question ${i + 1}:`, error);
         results.errors.push({
           row: i + 1,
-          error: error.message
+          error: error.message,
+          question: questions[i]?.question?.substring(0, 50)
         });
       }
     }
 
+    // Send response
     res.json({
       success: true,
-      message: `Uploaded ${results.success.length} questions successfully`,
+      message: `Processed ${questions.length} questions. Successfully uploaded ${results.success.length}.`,
       totalProcessed: questions.length,
       successCount: results.success.length,
       errorCount: results.errors.length,
+      successDetails: results.success,
       errors: results.errors
     });
 
@@ -646,6 +697,159 @@ export const deleteMockTest = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete mock test'
+    });
+  }
+};
+
+// @desc    Create mock test from CSV text
+// @route   POST /api/admin/mock-tests/create
+// @access  Private/Admin
+export const createMockTestFromCSV = async (req, res) => {
+  try {
+    const { examType, testName, csvText } = req.body;
+
+    if (!examType || !testName || !csvText) {
+      return res.status(400).json({
+        success: false,
+        message: 'Exam type, test name, and CSV text are required'
+      });
+    }
+
+    // Parse CSV text
+    const parsedQuestions = await parseCSVText(csvText);
+
+    if (!parsedQuestions || parsedQuestions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid questions found in CSV text'
+      });
+    }
+
+    // Validate question count
+    const expectedCount = examType === 'JEE' ? 90 : 180;
+    if (parsedQuestions.length !== expectedCount) {
+      return res.status(400).json({
+        success: false,
+        message: `${examType} mock test must have exactly ${expectedCount} questions. Found ${parsedQuestions.length}.`
+      });
+    }
+
+    // First, save all questions to database
+    const questionIds = [];
+    for (let i = 0; i < parsedQuestions.length; i++) {
+      const q = parsedQuestions[i];
+
+      // Get or create chapter/topic codes
+      const existingChapter = await Question.findOne({
+        examType,
+        subject: q.subject,
+        chapter: q.chapter
+      });
+
+      let chapterNumber;
+      if (existingChapter) {
+        chapterNumber = existingChapter.chapterNumber;
+      } else {
+        const maxChapter = await Question.findOne({ examType, subject: q.subject })
+          .sort({ chapterNumber: -1 })
+          .limit(1);
+        chapterNumber = maxChapter ? maxChapter.chapterNumber + 1 : 1;
+      }
+
+      const existingTopic = await Question.findOne({
+        examType,
+        subject: q.subject,
+        chapter: q.chapter,
+        topic: q.topic
+      });
+
+      let topicCode;
+      if (existingTopic) {
+        topicCode = existingTopic.topicCode;
+      } else {
+        const topicsInChapter = await Question.distinct('topicCode', {
+          examType,
+          subject: q.subject,
+          chapter: q.chapter
+        });
+        topicCode = String.fromCharCode(65 + topicsInChapter.length);
+      }
+
+      const questionId = await Question.generateQuestionId(examType);
+      const serialNumber = await Question.generateSerialNumber(examType, chapterNumber, topicCode);
+
+      const questionData = {
+        questionId,
+        serialNumber,
+        type: q.type,
+        examType,
+        subject: q.subject,
+        chapter: q.chapter,
+        chapterNumber,
+        topic: q.topic,
+        topicCode,
+        question: q.question,
+        questionImageUrl: q.questionImageUrl || null,
+        answer: q.answer,
+        createdBy: req.user.id,
+        lastModifiedBy: req.user.id
+      };
+
+      if (q.type === 'S') {
+        questionData.options = {
+          A: { text: q.optionA || '', imageUrl: q.optionAImageUrl || null },
+          B: { text: q.optionB || '', imageUrl: q.optionBImageUrl || null },
+          C: { text: q.optionC || '', imageUrl: q.optionCImageUrl || null },
+          D: { text: q.optionD || '', imageUrl: q.optionDImageUrl || null }
+        };
+      }
+
+      const savedQuestion = await Question.create(questionData);
+      questionIds.push(savedQuestion._id);
+    }
+
+    // Create mock test
+    const testId = await MockTest.generateTestId(examType);
+    const config = MockTest.getDefaultConfig(examType);
+
+    const questions = [];
+    questionIds.forEach((qId, index) => {
+      const question = parsedQuestions[index];
+      questions.push({
+        questionId: qId,
+        subject: question.subject,
+        section: question.subject,
+        marks: 4,
+        negativeMarks: -1,
+        questionNumber: index + 1
+      });
+    });
+
+    const mockTest = await MockTest.create({
+      testId,
+      testName,
+      examType,
+      ...config,
+      questions,
+      createdBy: req.user.id
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Mock test created successfully with all questions saved',
+      mockTest: {
+        _id: mockTest._id,
+        testId: mockTest.testId,
+        testName: mockTest.testName,
+        totalQuestions: mockTest.totalQuestions
+      }
+    });
+
+  } catch (error) {
+    console.error('Create mock test error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create mock test: ' + error.message
     });
   }
 };

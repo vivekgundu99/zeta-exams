@@ -65,6 +65,17 @@ export const getSubscriptionPlans = async (req, res) => {
 export const createOrder = async (req, res) => {
   try {
     const { subscriptionType, duration } = req.body;
+    
+    console.log('Create order request:', { subscriptionType, duration }); // Debug log
+    
+    // Validate inputs
+    if (!subscriptionType || !duration) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subscription type and duration are required'
+      });
+    }
+    
     const plan = getPlanOrThrow(subscriptionType, duration);
     const razorpay = getRazorpayInstance();
 
@@ -94,7 +105,10 @@ export const createOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Create order error:', error);
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to create order'
+    });
   }
 };
 

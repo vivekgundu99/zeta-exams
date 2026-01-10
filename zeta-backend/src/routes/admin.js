@@ -20,7 +20,8 @@ import {
   generateGiftCodes,
   getAllGiftCodes,
   deleteGiftCode,
-  getAdminStats
+  getAdminStats,
+  createMockTestFromCSV
 } from '../controllers/adminController.js';
 import { protect, isAdmin } from '../middleware/auth.js';
 
@@ -53,7 +54,7 @@ router.delete('/formulas/:formulaId', deleteFormula);
 router.get('/formulas/:examType', getAllFormulas);
 
 // Mock Test Management
-router.post('/mock-tests/create', createMockTest);
+router.post('/mock-tests/create', createMockTestFromCSV);
 router.put('/mock-tests/:testId', updateMockTest);
 router.delete('/mock-tests/:testId', deleteMockTest);
 
