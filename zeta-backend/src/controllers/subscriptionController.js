@@ -32,6 +32,15 @@ const SUBSCRIPTION_PLANS = {
   }
 };
 
+// Helper function to get plan
+const getPlanOrThrow = (subscriptionType, duration) => {
+  const plan = SUBSCRIPTION_PLANS[subscriptionType]?.[duration];
+  if (!plan) {
+    throw new Error('Invalid subscription plan');
+  }
+  return plan;
+};
+
 // @desc    Get all subscription plans
 // @route   GET /api/subscription/plans
 // @access  Private
@@ -57,7 +66,7 @@ export const createOrder = async (req, res) => {
   try {
     const { subscriptionType, duration } = req.body;
     const plan = getPlanOrThrow(subscriptionType, duration);
-    const razorpay = getRazorpayInstance(); // Changed from requireRazorpay()
+    const razorpay = getRazorpayInstance();
 
     if (!razorpay) {
       console.error('❌ Razorpay not configured');
@@ -109,7 +118,6 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    // Check if Razorpay is configured
     if (!process.env.RAZORPAY_KEY_SECRET) {
       return res.status(503).json({
         success: false,
@@ -133,12 +141,12 @@ export const verifyPayment = async (req, res) => {
 
     const razorpay = getRazorpayInstance();
     if (!razorpay) {
-  console.error('❌ Razorpay not configured');
-  return res.status(503).json({
-    success: false,
-    message: 'Payment service unavailable. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment variables.'
-  });
-}
+      console.error('❌ Razorpay not configured');
+      return res.status(503).json({
+        success: false,
+        message: 'Payment service unavailable.'
+      });
+    }
 
     // Fetch payment details from Razorpay
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
@@ -152,7 +160,7 @@ export const verifyPayment = async (req, res) => {
 
     // Update user subscription
     const user = await User.findById(req.user.id);
-    const plan = SUBSCRIPTION_PLANS[subscriptionType][duration];
+    const plan = getPlanOrThrow(subscriptionType, duration);
 
     const now = new Date();
     const endTime = new Date(now.getTime() + plan.days * 24 * 60 * 60 * 1000);
@@ -217,7 +225,6 @@ export const razorpayWebhook = async (req, res) => {
     // Handle different events
     switch (event) {
       case 'payment.captured':
-        // Payment successful
         const order = payload.payment.entity.order_id;
         const notes = payload.payment.entity.notes;
         
@@ -238,7 +245,6 @@ export const razorpayWebhook = async (req, res) => {
         break;
 
       case 'payment.failed':
-        // Payment failed - log for analysis
         console.log('Payment failed:', payload.payment.entity.error_description);
         break;
 

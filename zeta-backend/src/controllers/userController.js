@@ -16,13 +16,37 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    // Decrypt phone number
+    // Decrypt phone number for display
     const userProfile = user.toObject();
-    userProfile.phoneNo = decryptPhone(user.phoneNo);
+    try {
+      userProfile.phoneNo = decryptPhone(user.phoneNo);
+    } catch (error) {
+      // If decryption fails, keep encrypted value
+      console.error('Phone decryption error:', error);
+    }
 
+    // Return complete user object with all details
     res.json({
       success: true,
-      user: userProfile
+      user: {
+        id: userProfile._id,
+        email: userProfile.email,
+        phoneNo: userProfile.phoneNo,
+        subscription: userProfile.subscription,
+        subscriptionStartTime: userProfile.subscriptionStartTime,
+        subscriptionEndTime: userProfile.subscriptionEndTime,
+        examType: userProfile.examType,
+        userDetailsCompleted: userProfile.userDetailsCompleted,
+        userDetails: userProfile.userDetails,
+        isAdmin: userProfile.isAdmin,
+        dailyLimit: userProfile.dailyLimit,
+        totalQuestionsAttempted: userProfile.totalQuestionsAttempted,
+        totalTestsAttempted: userProfile.totalTestsAttempted,
+        totalMockTestsAttempted: userProfile.totalMockTestsAttempted,
+        giftCodeUsed: userProfile.giftCodeUsed,
+        giftCodeDetails: userProfile.giftCodeDetails,
+        createdAt: userProfile.createdAt
+      }
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -66,7 +90,14 @@ export const updateUserDetails = async (req, res) => {
 
     const user = await User.findById(req.user.id);
 
-    // Update user details
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update user details - THIS IS THE KEY FIX
     user.userDetails = {
       name,
       profession,
@@ -78,12 +109,23 @@ export const updateUserDetails = async (req, res) => {
     };
     user.userDetailsCompleted = true;
 
+    // Save to database
     await user.save();
 
+    // Return updated user with complete details
     res.json({
       success: true,
       message: 'User details updated successfully',
-      userDetails: user.userDetails
+      user: {
+        id: user._id,
+        email: user.email,
+        userDetailsCompleted: user.userDetailsCompleted,
+        userDetails: user.userDetails,
+        examType: user.examType,
+        subscription: user.subscription,
+        subscriptionEndTime: user.subscriptionEndTime,
+        isAdmin: user.isAdmin
+      }
     });
   } catch (error) {
     console.error('Update details error:', error);
@@ -109,6 +151,14 @@ export const selectExamType = async (req, res) => {
     }
 
     const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
     user.examType = examType;
     await user.save();
 

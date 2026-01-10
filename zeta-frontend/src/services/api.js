@@ -135,11 +135,11 @@ export const analyticsAPI = {
   getTimeAnalysis: () => api.get('/api/analytics/time-analysis'),
 };
 
-// Admin APIs
+// Admin API - Updated for CSV text input
 export const adminAPI = {
-  // Questions
-  bulkUploadQuestions: (formData) => api.post('/api/admin/questions/bulk-upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  // Questions - Changed from FormData to JSON
+  bulkUploadQuestions: (data) => api.post('/api/admin/questions/bulk-upload', data, {
+    headers: { 'Content-Type': 'application/json' } // Changed from multipart/form-data
   }),
   addQuestion: (data) => api.post('/api/admin/questions/add', data),
   updateQuestion: (questionId, data) => api.put(`/api/admin/questions/${questionId}`, data),
@@ -157,7 +157,7 @@ export const adminAPI = {
   updateMockTest: (testId, data) => api.put(`/api/admin/mock-tests/${testId}`, data),
   deleteMockTest: (testId) => api.delete(`/api/admin/mock-tests/${testId}`),
   
-  // Users
+  // Users - FIXED: Proper user details endpoint
   getAllUsers: (params) => api.get('/api/admin/users', { params }),
   getUserDetails: (userId) => api.get(`/api/admin/users/${userId}`),
   updateUserSubscription: (userId, data) => api.put(`/api/admin/users/${userId}/subscription`, data),

@@ -4,21 +4,22 @@ import MockTest from '../models/MockTest.js';
 import User from '../models/User.js';
 import GiftCode from '../models/GiftCode.js';
 import TestAttempt from '../models/TestAttempt.js';
-import { parseCSV } from '../utils/csvParser.js';
+import { parseCSVText } from '../utils/csvParser.js';
 
-// @desc    Bulk upload questions via CSV
+// @desc    Bulk upload questions via CSV TEXT
 // @route   POST /api/admin/questions/bulk-upload
 // @access  Private/Admin
 export const bulkUploadQuestions = async (req, res) => {
   try {
-    if (!req.file) {
+    const { csvText, examType } = req.body;
+
+    if (!csvText || !csvText.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a CSV file'
+        message: 'Please provide CSV text'
       });
     }
 
-    const { examType } = req.body;
     if (!examType || !['JEE', 'NEET'].includes(examType)) {
       return res.status(400).json({
         success: false,
@@ -26,14 +27,13 @@ export const bulkUploadQuestions = async (req, res) => {
       });
     }
 
-    // Parse CSV
-    const csvData = req.file.buffer.toString('utf-8');
-    const questions = await parseCSV(csvData);
+    // Parse CSV text
+    const questions = await parseCSVText(csvText);
 
     if (!questions || questions.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No valid questions found in CSV'
+        message: 'No valid questions found in CSV text'
       });
     }
 
@@ -90,7 +90,7 @@ export const bulkUploadQuestions = async (req, res) => {
             subject: q.subject,
             chapter: q.chapter
           });
-          const nextCode = String.fromCharCode(65 + topicsInChapter.length); // A, B, C...
+          const nextCode = String.fromCharCode(65 + topicsInChapter.length);
           topicCode = nextCode;
         }
 
@@ -138,14 +138,6 @@ export const bulkUploadQuestions = async (req, res) => {
           };
         }
 
-        // Add solution if provided
-        if (q.solution) {
-          questionData.solution = q.solution;
-        }
-        if (q.solutionImageUrl) {
-          questionData.solutionImageUrl = q.solutionImageUrl;
-        }
-
         // Create question
         await Question.create(questionData);
 
@@ -176,7 +168,7 @@ export const bulkUploadQuestions = async (req, res) => {
     console.error('Bulk upload error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to process CSV file'
+      message: 'Failed to process CSV text: ' + error.message
     });
   }
 };
@@ -188,7 +180,6 @@ export const addSingleQuestion = async (req, res) => {
   try {
     const questionData = req.body;
 
-    // Validate required fields
     if (!questionData.examType || !questionData.subject || !questionData.chapter || 
         !questionData.topic || !questionData.question || !questionData.answer || !questionData.type) {
       return res.status(400).json({
@@ -197,7 +188,6 @@ export const addSingleQuestion = async (req, res) => {
       });
     }
 
-    // Get or create chapter number
     const existingChapter = await Question.findOne({
       examType: questionData.examType,
       subject: questionData.subject,
@@ -217,7 +207,6 @@ export const addSingleQuestion = async (req, res) => {
       chapterNumber = maxChapter ? maxChapter.chapterNumber + 1 : 1;
     }
 
-    // Get or create topic code
     const existingTopic = await Question.findOne({
       examType: questionData.examType,
       subject: questionData.subject,
@@ -237,7 +226,6 @@ export const addSingleQuestion = async (req, res) => {
       topicCode = String.fromCharCode(65 + topicsInChapter.length);
     }
 
-    // Generate IDs
     const questionId = await Question.generateQuestionId(questionData.examType);
     const serialNumber = await Question.generateSerialNumber(questionData.examType, chapterNumber, topicCode);
 

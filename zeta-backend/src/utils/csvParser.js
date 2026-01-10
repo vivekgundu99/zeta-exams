@@ -1,9 +1,26 @@
-// CSV Parser for bulk question upload
+// CSV Parser for bulk question upload with LaTeX support
 // Format: Type#Subject#Chapter#Topic#Question#OptA#OptB#OptC#OptD#Answer#QImg#OptAImg#OptBImg#OptCImg#OptDImg
 
-export const parseCSV = async (csvData) => {
+// Convert LaTeX notation to proper format
+const convertLatex = (text) => {
+  if (!text) return text;
+  
+  // Match latex:(...) pattern and convert to LaTeX format
+  const latexRegex = /latex:(.*?)(?=#|$)/g;
+  
+  return text.replace(latexRegex, (match, formula) => {
+    // Wrap in LaTeX delimiters for rendering
+    return `$$${formula.trim()}$$`;
+  });
+};
+
+export const parseCSVText = async (csvText) => {
   try {
-    const lines = csvData.split('\n').filter(line => line.trim());
+    if (!csvText || !csvText.trim()) {
+      throw new Error('CSV text is empty');
+    }
+
+    const lines = csvText.split('\n').filter(line => line.trim());
     const questions = [];
 
     for (let i = 0; i < lines.length; i++) {
@@ -14,7 +31,7 @@ export const parseCSV = async (csvData) => {
       const parts = line.split('#').map(p => p.trim());
 
       if (parts.length < 11) {
-        console.warn(`Line ${i + 1}: Insufficient data`);
+        console.warn(`Line ${i + 1}: Insufficient data (needs at least 11 parts)`);
         continue;
       }
 
@@ -37,27 +54,33 @@ export const parseCSV = async (csvData) => {
       ] = parts;
 
       // Validate type
-      if (!['S', 'N'].includes(type)) {
-        console.warn(`Line ${i + 1}: Invalid question type`);
+      if (!['S', 'N', 'M'].includes(type.toUpperCase())) {
+        console.warn(`Line ${i + 1}: Invalid question type '${type}' (must be S, N, or M)`);
+        continue;
+      }
+
+      // Validate required fields
+      if (!subject || !chapter || !topic || !question || !answer) {
+        console.warn(`Line ${i + 1}: Missing required fields`);
         continue;
       }
 
       const questionData = {
-        type,
+        type: type.toUpperCase() === 'M' ? 'S' : type.toUpperCase(), // M is also MCQ
         subject,
         chapter,
         topic,
-        question,
+        question: convertLatex(question), // Apply LaTeX conversion
         answer,
         questionImageUrl: questionImageUrl || null
       };
 
-      // Add options for MCQ type
-      if (type === 'S') {
-        questionData.optionA = optionA || '';
-        questionData.optionB = optionB || '';
-        questionData.optionC = optionC || '';
-        questionData.optionD = optionD || '';
+      // Add options for MCQ type (S or M)
+      if (type.toUpperCase() === 'S' || type.toUpperCase() === 'M') {
+        questionData.optionA = convertLatex(optionA) || '';
+        questionData.optionB = convertLatex(optionB) || '';
+        questionData.optionC = convertLatex(optionC) || '';
+        questionData.optionD = convertLatex(optionD) || '';
         questionData.optionAImageUrl = optionAImageUrl || null;
         questionData.optionBImageUrl = optionBImageUrl || null;
         questionData.optionCImageUrl = optionCImageUrl || null;
@@ -67,43 +90,19 @@ export const parseCSV = async (csvData) => {
       questions.push(questionData);
     }
 
-    return questions;
-
-  } catch (error) {
-    console.error('CSV parsing error:', error);
-    throw new Error('Failed to parse CSV file');
-  }
-};
-
-// Alternative: Parse CSV with headers
-export const parseCSVWithHeaders = (csvData) => {
-  try {
-    const lines = csvData.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-
-    const headers = lines[0].split(',').map(h => h.trim());
-    const questions = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      
-      if (values.length !== headers.length) {
-        console.warn(`Line ${i + 1}: Column count mismatch`);
-        continue;
-      }
-
-      const question = {};
-      headers.forEach((header, index) => {
-        question[header] = values[index];
-      });
-
-      questions.push(question);
+    if (questions.length === 0) {
+      throw new Error('No valid questions found in CSV text. Please check the format.');
     }
 
     return questions;
 
   } catch (error) {
     console.error('CSV parsing error:', error);
-    throw new Error('Failed to parse CSV file');
+    throw new Error('Failed to parse CSV text: ' + error.message);
   }
+};
+
+// Legacy CSV file parser (kept for backward compatibility)
+export const parseCSV = async (csvData) => {
+  return parseCSVText(csvData);
 };

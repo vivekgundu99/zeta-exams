@@ -1,36 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/common/Navbar';
 import Loader from '../../components/common/Loader';
-import { Upload, Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Upload, Search, Edit, Trash2, HelpCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import Modal from '../../components/common/Modal';
 
 const AdminQuestions = () => {
   const [loading, setLoading] = useState(false);
-  const [csvFile, setCsvFile] = useState(null);
+  const [csvText, setCsvText] = useState('');
   const [examType, setExamType] = useState('JEE');
   const [searchQuery, setSearchQuery] = useState('');
   const [questions, setQuestions] = useState([]);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const handleCSVUpload = async () => {
-    if (!csvFile) {
-      toast.error('Please select a CSV file');
+    if (!csvText.trim()) {
+      toast.error('Please enter CSV text');
       return;
     }
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('csv', csvFile);
-      formData.append('examType', examType);
-
-      const response = await adminAPI.bulkUploadQuestions(formData);
+      const response = await adminAPI.bulkUploadQuestions({ csvText, examType });
+      
       if (response.success) {
         toast.success(`${response.successCount} questions uploaded successfully!`);
-        setCsvFile(null);
+        setCsvText('');
+        
         if (response.errors.length > 0) {
           console.log('Errors:', response.errors);
+          toast.error(`${response.errorCount} questions failed. Check console for details.`);
         }
       }
     } catch (error) {
@@ -60,45 +60,63 @@ const AdminQuestions = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Question Management</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Question Management</h1>
+          <button onClick={() => setShowHelpModal(true)} className="btn-secondary flex items-center space-x-2">
+            <HelpCircle size={20} />
+            <span>CSV Format Help</span>
+          </button>
+        </div>
 
         {/* Bulk Upload Section */}
         <div className="card mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bulk Upload (CSV)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bulk Upload Questions (CSV Format)</h3>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-blue-800 font-medium mb-2">CSV Format:</p>
-            <code className="text-xs text-blue-700">
-              Type#Subject#Chapter#Topic#Question#OptA#OptB#OptC#OptD#Answer#QImg#OptAImg#OptBImg#OptCImg#OptDImg
-            </code>
+            <p className="text-sm text-blue-800 font-medium mb-2">Quick Examples:</p>
+            <div className="space-y-2 text-xs text-blue-700 font-mono">
+              <p><strong>MCQ:</strong> M#Physics#Gravitation#Escape velocity#What is the escape velocity of Earth?#10 km/sec#11 km/sec#12 km/sec#13 km/sec#B#####</p>
+              <p><strong>Numerical:</strong> N#Physics#Gravitation#Escape velocity#What is the escape velocity of Earth in km/sec?#####11#####</p>
+              <p><strong>With LaTeX:</strong> M#Chemistry#Stoichiometry#Mole#What is latex:H_2O called?#Water#Air#Gas#Solid#A#####</p>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Exam Type</label>
             <select
               value={examType}
               onChange={(e) => setExamType(e.target.value)}
-              className="input-field"
+              className="input-field max-w-xs"
             >
               <option value="JEE">JEE</option>
               <option value="NEET">NEET</option>
             </select>
-
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => setCsvFile(e.target.files[0])}
-              className="input-field"
-            />
-
-            <button
-              onClick={handleCSVUpload}
-              disabled={loading || !csvFile}
-              className="btn-primary flex items-center justify-center space-x-2"
-            >
-              <Upload size={20} />
-              <span>{loading ? 'Uploading...' : 'Upload CSV'}</span>
-            </button>
           </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              CSV Text (Paste your questions here)
+            </label>
+            <textarea
+              value={csvText}
+              onChange={(e) => setCsvText(e.target.value)}
+              placeholder="Paste CSV formatted text here. Each line = one question&#10;Example: M#Physics#Gravitation#Escape velocity#What is the escape velocity?#10 km/s#11 km/s#12 km/s#13 km/s#B#####"
+              className="input-field font-mono text-sm"
+              rows="10"
+            />
+            <p className="mt-2 text-sm text-gray-600">
+              {csvText.split('\n').filter(l => l.trim()).length} questions entered
+            </p>
+          </div>
+
+          <button
+            onClick={handleCSVUpload}
+            disabled={loading || !csvText.trim()}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <Upload size={20} />
+            <span>{loading ? 'Uploading...' : 'Upload Questions'}</span>
+          </button>
         </div>
 
         {/* Search Section */}
@@ -134,8 +152,8 @@ const AdminQuestions = () => {
                 <tbody>
                   {questions.map((q) => (
                     <tr key={q._id} className="border-b border-gray-100">
-                      <td className="py-3 px-4">{q.questionId}</td>
-                      <td className="py-3 px-4">{q.serialNumber}</td>
+                      <td className="py-3 px-4 font-mono text-sm">{q.questionId}</td>
+                      <td className="py-3 px-4 font-mono text-sm">{q.serialNumber}</td>
                       <td className="py-3 px-4">{q.subject}</td>
                       <td className="py-3 px-4">{q.chapter}</td>
                       <td className="py-3 px-4">
@@ -159,6 +177,66 @@ const AdminQuestions = () => {
           )}
         </div>
       </div>
+
+      {/* Help Modal */}
+      <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="CSV Format Help" size="lg">
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">Format Structure</h4>
+            <p className="text-sm text-gray-600 mb-2">Each question is one line with 15 fields separated by #:</p>
+            <code className="text-xs bg-gray-100 p-2 rounded block">
+              Type#Subject#Chapter#Topic#Question#OptA#OptB#OptC#OptD#Answer#QImg#OptAImg#OptBImg#OptCImg#OptDImg
+            </code>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">Question Types</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li><strong>M or S</strong> = Multiple Choice (MCQ) - Must have 4 options</li>
+              <li><strong>N</strong> = Numerical - Options should be empty (#####)</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">LaTeX Support</h4>
+            <p className="text-sm text-gray-600 mb-2">Use <code className="bg-gray-100 px-1">latex:formula</code> in any text field:</p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Water formula: <code className="bg-gray-100 px-1">latex:H_2O</code></li>
+              <li>• Quadratic: <code className="bg-gray-100 px-1">latex:ax^2 + bx + c = 0</code></li>
+              <li>• Integral: <code className="bg-gray-100 px-1">latex:\int_0^1 x^2 dx</code></li>
+              <li>• Sigma: <code className="bg-gray-100 px-1">latex:\sum_{i=1}^n i</code></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">Complete Examples</h4>
+            <div className="space-y-3 text-xs font-mono bg-gray-50 p-3 rounded">
+              <div>
+                <p className="text-gray-600 mb-1">MCQ with LaTeX:</p>
+                <p className="text-gray-800">M#Chemistry#Stoichiometry#Mole#What is latex:H_2O?#Water#Hydrogen#Oxygen#Gas#A#####</p>
+              </div>
+              <div>
+                <p className="text-gray-600 mb-1">Numerical:</p>
+                <p className="text-gray-800">N#Physics#Gravitation#Escape velocity#Escape velocity of Earth in km/s?#####11#####</p>
+              </div>
+              <div>
+                <p className="text-gray-600 mb-1">Math with LaTeX:</p>
+                <p className="text-gray-800">M#Maths#Calculus#Integration#Solve latex:\int x^2 dx#latex:x^3/3#latex:x^2/2#latex:2x^3#latex:x^4#A#####</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p className="text-sm text-yellow-800"><strong>Important:</strong></p>
+            <ul className="text-sm text-yellow-700 mt-2 space-y-1">
+              <li>• Each line must have exactly 15 # symbols (16 parts)</li>
+              <li>• Empty fields still need # separator</li>
+              <li>• Answer for MCQ: A, B, C, or D</li>
+              <li>• Answer for Numerical: exact number</li>
+            </ul>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
