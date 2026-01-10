@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 const resendInstance = new Resend(process.env.RESEND_API_KEY);
 
 // Send OTP email
+// Send OTP email
 export const sendOTPEmail = async (email, otp, type = 'registration') => {
   try {
     // Check if Resend API key is configured
@@ -11,7 +12,7 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
       console.warn('⚠️ RESEND_API_KEY is not configured');
       console.log('📧 OTP for testing (COPY THIS):', otp);
       console.log('📧 Email would be sent to:', email);
-      return true; // Don't fail in development
+      return true;
     }
 
     console.log('Attempting to send email to:', email);
@@ -21,85 +22,71 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
     
     if (type === 'registration') {
       subject = 'Verify Your Email - Zeta Exams';
-      html = `
-        
-        
-        
-          
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .otp-box { background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0; border-radius: 8px; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-          
-        
-        
-          
-            
-              🎓 Welcome to Zeta Exams!
-            
-            
-              Hello,
-              Thank you for registering with Zeta Exams. To complete your registration, please verify your email address using the OTP below:
-              ${otp}
-              This OTP is valid for 10 minutes.
-              If you didn't request this, please ignore this email.
-              Best regards,Team Zeta Exams
-            
-            
-              © ${new Date().getFullYear()} Zeta Exams. All rights reserved.
-            
-          
-        
-        
-      `;
+      html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Email</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+      <h1 style="margin: 0; font-size: 24px;">🎓 Welcome to Zeta Exams!</h1>
+    </div>
+    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+      <p>Hello,</p>
+      <p>Thank you for registering with Zeta Exams. To complete your registration, please verify your email address using the OTP below:</p>
+      <div style="background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0; border-radius: 8px;">
+        ${otp}
+      </div>
+      <p>This OTP is valid for 10 minutes.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+      <p>Best regards,<br>Team Zeta Exams</p>
+    </div>
+    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+      © ${new Date().getFullYear()} Zeta Exams. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`;
     } else if (type === 'password-reset') {
       subject = 'Reset Your Password - Zeta Exams';
-      html = `
-        
-        
-        
-          
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .otp-box { background: white; border: 2px dashed #f5576c; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0; border-radius: 8px; }
-            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-          
-        
-        
-          
-            
-              🔐 Password Reset Request
-            
-            
-              Hello,
-              We received a request to reset your password for your Zeta Exams account. Use the OTP below to reset your password:
-              ${otp}
-              This OTP is valid for 10 minutes.
-              
-                ⚠️ Security Note: If you didn't request this password reset, please ignore this email and consider changing your password immediately.
-              
-              Best regards,Team Zeta Exams
-            
-            
-              © ${new Date().getFullYear()} Zeta Exams. All rights reserved.
-            
-          
-        
-        
-      `;
+      html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+      <h1 style="margin: 0; font-size: 24px;">🔐 Password Reset Request</h1>
+    </div>
+    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+      <p>Hello,</p>
+      <p>We received a request to reset your password for your Zeta Exams account. Use the OTP below to reset your password:</p>
+      <div style="background: white; border: 2px dashed #f5576c; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0; border-radius: 8px;">
+        ${otp}
+      </div>
+      <p>This OTP is valid for 10 minutes.</p>
+      <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <strong>⚠️ Security Note:</strong> If you didn't request this password reset, please ignore this email and consider changing your password immediately.
+      </div>
+      <p>Best regards,<br>Team Zeta Exams</p>
+    </div>
+    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+      © ${new Date().getFullYear()} Zeta Exams. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`;
     }
     
-    // IMPORTANT: Use verified domain email
-    // For testing: Use onboarding@resend.dev
-    // For production: Use your verified domain (e.g., noreply@yourdomain.com)
     const { data, error } = await resendInstance.emails.send({
-      from: 'onboarding@resend.dev', // For testing, or use your verified domain
-      to: email, // Remove array brackets
+      from: 'Zeta Exams <onboarding@zetaexams.in>',
+      to: email,
       subject: subject,
       html: html
     });
@@ -107,7 +94,6 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
     if (error) {
       console.error('❌ Resend email error:', error);
       console.log('📧 OTP for manual use:', otp);
-      // Don't fail the request - log error but continue
       return true;
     }
 
@@ -117,7 +103,6 @@ export const sendOTPEmail = async (email, otp, type = 'registration') => {
   } catch (error) {
     console.error('❌ Email service error:', error);
     console.log('📧 OTP for manual use:', otp);
-    // Don't fail the request
     return true;
   }
 };
@@ -169,8 +154,8 @@ export const sendSubscriptionEmail = async (email, subscriptionType, endDate) =>
     `;
     
     await resendInstance.emails.send({
-      from: 'Zeta Exams ',
-      to: [email],
+      from: 'Zeta Exams <noreply@zetaexams.in>',
+      to: email,
       subject: subject,
       html: html
     });
