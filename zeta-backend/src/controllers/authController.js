@@ -218,7 +218,10 @@ if (isAdmin) {
       id: adminUser._id,
       email: adminUser.email,
       isAdmin: true,
-      userDetailsCompleted: true
+      userDetailsCompleted: true,
+      userDetails: adminUser.userDetails, // ADD THIS LINE
+      examType: adminUser.examType,
+      subscription: adminUser.subscription
     }
   });
 }
@@ -265,23 +268,29 @@ if (isAdmin) {
     }
 
     // Generate token
-    const token = generateToken(user._id);
+const token = generateToken(user._id);
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        phoneNo: decryptPhone(user.phoneNo),
-        subscription: user.subscription,
-        subscriptionEndTime: user.subscriptionEndTime,
-        userDetailsCompleted: user.userDetailsCompleted,
-        examType: user.examType,
-        isAdmin: user.isAdmin
-      }
-    });
+// Return COMPLETE user object
+res.json({
+  success: true,
+  message: 'Login successful',
+  token,
+  user: {
+    id: user._id,
+    email: user.email,
+    phoneNo: decryptPhone(user.phoneNo),
+    subscription: user.subscription,
+    subscriptionStartTime: user.subscriptionStartTime,
+    subscriptionEndTime: user.subscriptionEndTime,
+    userDetailsCompleted: user.userDetailsCompleted,
+    userDetails: user.userDetails, // ADD THIS LINE - it's missing!
+    examType: user.examType,
+    isAdmin: user.isAdmin,
+    dailyLimit: user.dailyLimit,
+    totalQuestionsAttempted: user.totalQuestionsAttempted,
+    giftCodeUsed: user.giftCodeUsed
+  }
+});
 
   } catch (error) {
     console.error('Login error:', error);

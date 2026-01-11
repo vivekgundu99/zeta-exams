@@ -12,6 +12,7 @@ const SubscriptionPage = () => {
   const navigate = useNavigate();
   const { user, refreshUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [activeButton, setActiveButton] = useState(null);
   const [showGiftCodeModal, setShowGiftCodeModal] = useState(false);
   const [giftCode, setGiftCode] = useState('');
   const [giftCodeLoading, setGiftCodeLoading] = useState(false);
@@ -76,88 +77,92 @@ const SubscriptionPage = () => {
   }, [user]);
 
   const handlePayment = async (planType, pricingOption) => {
-    // Add this check at the start
-    if (!window.Razorpay) {
-      toast.error('Payment service is loading. Please wait...');
-      setTimeout(() => window.location.reload(), 1000);
-      return;
+  if (!window.Razorpay) {
+    toast.error('Payment service is loading. Please wait...');
+    setTimeout(() => window.location.reload(), 1000);
+    return;
+  }
+
+  if (loading) return; // Prevent multiple clicks
+
+  const buttonId = `${planType}-${pricingOption.duration}`;
+  setActiveButton(buttonId);
+  setLoading(true);
+
+  try {
+    console.log('Creating order...', { planType, duration: pricingOption.duration });
+
+    const orderResponse = await subscriptionAPI.createOrder({
+      subscriptionType: planType,
+      duration: pricingOption.duration
+    });
+
+    console.log('Order response:', orderResponse);
+
+    if (!orderResponse.success) {
+      throw new Error(orderResponse.message || 'Failed to create order');
     }
-    setLoading(true);
 
-    try {
-      // Create Razorpay order
-      const orderResponse = await subscriptionAPI.createOrder({
-        subscriptionType: planType,
-        duration: pricingOption.duration
-      });
+    const { order } = orderResponse;
 
-      if (!orderResponse.success) {
-        throw new Error('Failed to create order');
-      }
+    const options = {
+      key: order.key,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Zeta Exams',
+      description: `${planType.toUpperCase()} - ${pricingOption.duration}`,
+      order_id: order.id,
+      prefill: {
+        name: user?.userDetails?.name || '',
+        email: user?.email || '',
+        contact: user?.phoneNo || ''
+      },
+      theme: {
+        color: '#0ea5e9'
+      },
+      handler: async function (response) {
+        try {
+          console.log('Payment successful, verifying...');
+          
+          const verifyResponse = await subscriptionAPI.verifyPayment({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            subscriptionType: planType,
+            duration: pricingOption.duration
+          });
 
-      const { order } = orderResponse;
-
-      // Razorpay options
-      const options = {
-        key: order.key,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'Zeta Exams',
-        description: `${planType.toUpperCase()} - ${pricingOption.duration}`,
-        order_id: order.id,
-        prefill: {
-          name: user?.userDetails?.name || '',
-          email: user?.email || '',
-          contact: user?.phoneNo || ''
-        },
-        theme: {
-          color: '#0ea5e9'
-        },
-        method: {
-          upi: true,
-          card: false,
-          netbanking: false,
-          wallet: false
-        },
-        handler: async function (response) {
-          // Verify payment
-          try {
-            const verifyResponse = await subscriptionAPI.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              subscriptionType: planType,
-              duration: pricingOption.duration
-            });
-
-            if (verifyResponse.success) {
-              toast.success('Payment successful! Subscription activated.');
-              await refreshUserProfile();
-              setTimeout(() => navigate('/dashboard'), 2000);
-            } else {
-              toast.error('Payment verification failed');
-            }
-          } catch (error) {
+          if (verifyResponse.success) {
+            toast.success('Payment successful! Subscription activated.');
+            await refreshUserProfile();
+            setTimeout(() => navigate('/dashboard'), 2000);
+          } else {
             toast.error('Payment verification failed');
           }
-        },
-        modal: {
-          ondismiss: function() {
-            toast.error('Payment cancelled');
-            setLoading(false);
-          }
+        } catch (error) {
+          console.error('Verification error:', error);
+          toast.error('Payment verification failed');
         }
-      };
+      },
+      modal: {
+        ondismiss: function() {
+          toast.error('Payment cancelled');
+          setLoading(false);
+        }
+      }
+    };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+    const rzp = new window.Razorpay(options);
+    rzp.open();
 
-    } catch (error) {
-      toast.error(error.message || 'Payment failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Payment error:', error);
+    toast.error(error.message || 'Payment failed');
+  } finally {
+  setLoading(false);
+  setActiveButton(null);
+}
+};
 
   const handleGiftCodeSubmit = async () => {
     if (!giftCode || giftCode.length !== 8) {
@@ -292,8 +297,14 @@ const SubscriptionPage = () => {
                     <span className="text-sm text-gray-500 line-through">₹{option.mrp}</span>
                   </div>
                   <button
-                    onClick={() => handlePayment('silver', option)}
-                    disabled={loading}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!loading) {
+                        handlePayment('silver', option);
+                      }
+                    }}
+                    disabled={loading || activeButton === `silver-${option.duration}`}
                     className="w-full btn-primary text-sm py-2"
                   >
                     {loading ? <Loader size="sm" /> : 'Subscribe Now'}
@@ -345,12 +356,18 @@ const SubscriptionPage = () => {
                     <span className="text-sm text-gray-500 line-through">₹{option.mrp}</span>
                   </div>
                   <button
-                    onClick={() => handlePayment('gold', option)}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all"
-                  >
-                    {loading ? <Loader size="sm" /> : 'Subscribe Now'}
-                  </button>
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!loading) {
+                          handlePayment('gold', option);
+                        }
+                      }}
+                      disabled={loading || activeButton === `gold-${option.duration}`}
+                      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all"
+                    >
+                      {loading ? <Loader size="sm" /> : 'Subscribe Now'}
+                    </button>
                 </div>
               ))}
             </div>

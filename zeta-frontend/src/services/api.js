@@ -33,17 +33,24 @@ api.interceptors.request.use(
 // Response interceptor - Handle errors
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.config.url, response.status); // Debug log
+    console.log('API Response:', response.config.url, response.status);
     return response.data;
   },
   (error) => {
-    console.error('API Error:', error.response || error.message); // Debug log
+    console.error('API Error Details:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     
     if (error.response) {
-      // Server responded with error
       const message = error.response.data?.message || 'Something went wrong';
       
-      // Handle 401 - Unauthorized
+      // Log the full error for debugging
+      console.error('Server Error Response:', error.response.data);
+      
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -52,10 +59,8 @@ api.interceptors.response.use(
       
       return Promise.reject(new Error(message));
     } else if (error.request) {
-      // Request made but no response
       return Promise.reject(new Error('Network error. Please check your connection.'));
     } else {
-      // Error in request setup
       return Promise.reject(new Error('Request failed. Please try again.'));
     }
   }

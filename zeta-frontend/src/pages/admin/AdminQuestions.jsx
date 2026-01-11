@@ -28,32 +28,42 @@ const AdminQuestions = () => {
         toast.success(`${response.successCount} questions uploaded successfully!`);
         setCsvText('');
         
-        if (response.errors.length > 0) {
+        if (response.errors && response.errors.length > 0) {
           console.log('Errors:', response.errors);
           toast.error(`${response.errorCount} questions failed. Check console for details.`);
         }
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Upload failed');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = async () => {
-    if (!searchQuery) return;
+    if (!searchQuery.trim()) {
+      toast.error('Please enter a search query');
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await adminAPI.searchQuestion({ query: searchQuery, examType });
       if (response.success) {
         setQuestions(response.questions);
+        if (response.questions.length === 0) {
+          toast.info('No questions found');
+        }
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Search failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getQuestionCount = () => {
+    return csvText.split('\n').filter(line => line.trim()).length;
   };
 
   return (
@@ -62,7 +72,10 @@ const AdminQuestions = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Question Management</h1>
-          <button onClick={() => setShowHelpModal(true)} className="btn-secondary flex items-center space-x-2">
+          <button 
+            onClick={() => setShowHelpModal(true)} 
+            className="btn-secondary flex items-center space-x-2"
+          >
             <HelpCircle size={20} />
             <span>CSV Format Help</span>
           </button>
@@ -95,7 +108,7 @@ const AdminQuestions = () => {
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              CSV Text (Paste your questions here)
+              CSV Text ({getQuestionCount()} questions)
             </label>
             <textarea
               value={csvText}
@@ -104,17 +117,14 @@ const AdminQuestions = () => {
               className="input-field font-mono text-sm"
               rows="10"
             />
-            <p className="mt-2 text-sm text-gray-600">
-              {csvText.split('\n').filter(l => l.trim()).length} questions entered
-            </p>
           </div>
 
           <button
             onClick={handleCSVUpload}
             disabled={loading || !csvText.trim()}
-            className="btn-primary flex items-center space-x-2"
+            className="btn-primary flex items-center space-x-2 disabled:opacity-50"
           >
-            <Upload size={20} />
+            {loading ? <Loader size="sm" /> : <Upload size={20} />}
             <span>{loading ? 'Uploading...' : 'Upload Questions'}</span>
           </button>
         </div>
@@ -130,9 +140,10 @@ const AdminQuestions = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by Question ID or Serial Number"
               className="input-field flex-1"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <button onClick={handleSearch} className="btn-primary">
-              <Search size={20} />
+            <button onClick={handleSearch} className="btn-primary" disabled={loading}>
+              {loading ? <Loader size="sm" /> : <Search size={20} />}
             </button>
           </div>
 
@@ -179,12 +190,17 @@ const AdminQuestions = () => {
       </div>
 
       {/* Help Modal */}
-      <Modal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} title="CSV Format Help" size="lg">
+      <Modal 
+        isOpen={showHelpModal} 
+        onClose={() => setShowHelpModal(false)} 
+        title="CSV Format Help" 
+        size="lg"
+      >
         <div className="space-y-6">
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Format Structure</h4>
             <p className="text-sm text-gray-600 mb-2">Each question is one line with 15 fields separated by #:</p>
-            <code className="text-xs bg-gray-100 p-2 rounded block">
+            <code className="text-xs bg-gray-100 p-2 rounded block overflow-x-auto">
               Type#Subject#Chapter#Topic#Question#OptA#OptB#OptC#OptD#Answer#QImg#OptAImg#OptBImg#OptCImg#OptDImg
             </code>
           </div>
@@ -204,13 +220,13 @@ const AdminQuestions = () => {
               <li>• Water formula: <code className="bg-gray-100 px-1">latex:H_2O</code></li>
               <li>• Quadratic: <code className="bg-gray-100 px-1">latex:ax^2 + bx + c = 0</code></li>
               <li>• Integral: <code className="bg-gray-100 px-1">latex:\int_0^1 x^2 dx</code></li>
-              <li>• Sigma: <code className="bg-gray-100 px-1">latex:\sum_{i=1}^n i</code></li>
+              <li>• Sigma: <code className="bg-gray-100 px-1">latex:\sum_&#123;i=1&#125;^n i</code></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Complete Examples</h4>
-            <div className="space-y-3 text-xs font-mono bg-gray-50 p-3 rounded">
+            <div className="space-y-3 text-xs font-mono bg-gray-50 p-3 rounded overflow-x-auto">
               <div>
                 <p className="text-gray-600 mb-1">MCQ with LaTeX:</p>
                 <p className="text-gray-800">M#Chemistry#Stoichiometry#Mole#What is latex:H_2O?#Water#Hydrogen#Oxygen#Gas#A#####</p>

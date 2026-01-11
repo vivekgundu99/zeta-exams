@@ -1,5 +1,4 @@
 import express from 'express';
-import multer from 'multer';
 import {
   bulkUploadQuestions,
   addSingleQuestion,
@@ -11,6 +10,7 @@ import {
   deleteFormula,
   getAllFormulas,
   createMockTest,
+  createMockTestFromCSV,
   updateMockTest,
   deleteMockTest,
   getAllUsers,
@@ -20,19 +20,13 @@ import {
   generateGiftCodes,
   getAllGiftCodes,
   deleteGiftCode,
-  getAdminStats,
-  createMockTestFromCSV
+  getAdminStats
 } from '../controllers/adminController.js';
 import { protect, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Configure multer for CSV upload
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
-
+// Remove multer - we don't need it anymore
 // All routes require admin authentication
 router.use(protect);
 router.use(isAdmin);
@@ -40,8 +34,8 @@ router.use(isAdmin);
 // Dashboard stats
 router.get('/stats', getAdminStats);
 
-// Question Management
-router.post('/questions/bulk-upload', upload.single('csv'), bulkUploadQuestions);
+// Question Management - NO MULTER
+router.post('/questions/bulk-upload', bulkUploadQuestions);
 router.post('/questions/add', addSingleQuestion);
 router.put('/questions/:questionId', updateQuestion);
 router.delete('/questions/:questionId', deleteQuestion);
