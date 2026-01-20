@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZetaExams - Your Gateway to Competitive Exam Preparation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .exams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .exam-card {
+            background: white;
+            border-radius: 15px;
+            padding: 35px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exam-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .exam-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .exam-card h2 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            color: #667eea;
+        }
+
+        .exam-card p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .exam-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 30px;
+            margin-top: 50px;
+        }
+
+        footer p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.5rem;
+            }
+
+            header p {
+                font-size: 1.1rem;
+            }
+
+            .exam-card {
+                padding: 25px;
+            }
+
+            .exam-card h2 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ZetaExams</h1>
+            <p>Your One-Stop Destination for Competitive Exam Preparation</p>
+        </header>
+
+        <div class="exams-grid">
+            <!-- JEE Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>JEE</h2>
+                <p>Joint Entrance Examination - Access previous year questions, mock tests, and comprehensive study materials for JEE Main & Advanced.</p>
+                <span class="exam-tag">Engineering</span>
+            </a>
+
+            <!-- NEET Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>NEET</h2>
+                <p>National Eligibility cum Entrance Test - Complete preparation resources, PYQs, and practice tests for medical aspirants.</p>
+                <span class="exam-tag">Medical</span>
+            </a>
+
+            <!-- UPSC Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>UPSC</h2>
+                <p>Union Public Service Commission - Comprehensive materials for Civil Services Examination including Prelims and Mains.</p>
+                <span class="exam-tag">Civil Services</span>
+            </a>
+
+            <!-- CAT Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>CAT</h2>
+                <p>Common Admission Test - Complete MBA entrance exam preparation with mock tests and previous year papers.</p>
+                <span class="exam-tag">Management</span>
+            </a>
+
+            <!-- GATE Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>GATE</h2>
+                <p>Graduate Aptitude Test in Engineering - Practice tests and study materials for all engineering streams.</p>
+                <span class="exam-tag">Engineering</span>
+            </a>
+
+            <!-- SSC Exam Card -->
+            <a href="#" class="exam-card">
+                <h2>SSC</h2>
+                <p>Staff Selection Commission - Preparation resources for SSC CGL, CHSL, MTS and other SSC examinations.</p>
+                <span class="exam-tag">Government Jobs</span>
+            </a>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 ZetaExams. All rights reserved. | Empowering Students, Building Futures</p>
+        </footer>
+    </div>
+</body>
+</html>
